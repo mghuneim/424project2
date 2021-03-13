@@ -160,14 +160,18 @@ ui <- dashboardPage(
                                    status = "primary", width = 12,
                                    leafletOutput("map3")
                                )
-                        )
+                        ),
+                        column(1,
+                               checkboxGroupInput("checkGroupBoth",
+                                                  h4("Select which energy source to filter"),
+                                                  choices = c("All", sources),
+                                                  selected = "All")
+                    )
                     )
             ),
             # US Map
             tabItem(tabName = "usa",
-                    fluidRow(
                     column(1,
-                           h2("Use the first year and state options to control the map"),
                            checkboxGroupInput("checkGroup4",
                                               h4("Select which energy source to filter"),
                                               choices = c("All", sources))  
@@ -177,11 +181,12 @@ ui <- dashboardPage(
                                status = "primary", width = 12,
                                leafletOutput("map4")
                            )
+                    ),
+                    column(10, 
+                            sliderInput("slider1", '', min = 0, max = 35000000, value = c(0, 35000000), width = 100 
+                            ),
+                            h2("Use the first year and state options to control the map")
                     )
-                    ), 
-                    column(1, 
-                            sliderInput("slider1", '', min = 0, max = 35000000, value = c(0, 35000000) 
-                            ))
             ),
             #about
             tabItem(tabName = "credits",
@@ -279,7 +284,7 @@ server <- function(input, output) {
         
         if (!is.null(newdata2)){
             newdata2 <- subset(newdata2, newdata2$totGen >= input$slider1[1] & newdata2$totGen <= input$slider1[2])
-            if ("All" %in% input$checkGroup3){
+            if ("All" %in% input$checkGroup4){
                 newdata2
             }
             else if ("Renewable" %in% input$checkGroup3){
@@ -289,7 +294,7 @@ server <- function(input, output) {
                 newdata2 <- subset(newdata2, newdata2$primary %in% c('coal', 'oil', 'gas', 'nuclear', 'other'))
             }
             else {
-                newdata2 <- subset(newdata2, newdata2$primary %in% input$checkGroup3)
+                newdata2 <- subset(newdata2, newdata2$primary %in% input$checkGroup4)
             }
         }
     })
