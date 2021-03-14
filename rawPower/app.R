@@ -15,7 +15,8 @@ library(leaflet.providers)
 library(leaflet.extras)
 
 
-dataset <- read.csv("~/2018data.csv", header = TRUE)
+# reading in 2018 datafile (I cleaned the original data files in Python)
+dataset <- read.csv("2018data.csv", header = TRUE)
 dataset$nuclear <- as.numeric(dataset$nuclear)
 dataset$geo <- as.numeric(dataset$geo)
 dataset$totGen <- rowSums(dataset[,6:15])
@@ -39,7 +40,8 @@ dataset <- subset(dataset, !(is.na(dataset$lat) & !(is.na(dataset$long))))
 dataset18 <- subset(dataset, dataset$coal != 'NA' & dataset$oil != 'NA' & dataset$gas != 'NA' & dataset$nuclear != 'NA' & dataset$hydro != 'NA' 
                     & dataset$bio != 'NA' & dataset$wind != 'NA' & dataset$solar != 'NA' & dataset$geo != 'NA' & dataset$other != 'NA')
 
-dataset2 <- read.csv('~/2000data.csv', header = TRUE)
+# reading in 2000 datafile (I cleaned the original data files in Python)
+dataset2 <- read.csv('2000data.csv', header = TRUE)
 dataset2$totGen <- rowSums(dataset2[,6:15])
 dataset2$percentCoal <- dataset2$coal / dataset2$totGen
 dataset2$percentOil <- dataset2$oil / dataset2$totGen
@@ -60,7 +62,8 @@ dataset2 <- subset(dataset2, dataset2$lat != 'NA' & dataset2$long != 'NA')
 dataset00 <- subset(dataset2, dataset2$coal != 'NA' & dataset2$oil != 'NA' & dataset2$gas != 'NA' & dataset2$nuclear != 'NA' & dataset2$hydro != 'NA' 
                     & dataset2$bio != 'NA' & dataset2$wind != 'NA' & dataset2$solar != 'NA' & dataset2$geo != 'NA' & dataset2$other != 'NA')
 
-dataset3 <- read.csv('~/2010data.csv', header = TRUE)
+# reading in 2010 datafile (I cleaned the original data files in Python)
+dataset3 <- read.csv('2010data.csv', header = TRUE)
 dataset3$totGen <- rowSums(dataset3[,6:15])
 dataset3$percentCoal <- dataset3$coal / dataset3$totGen
 dataset3$percentOil <- dataset3$oil / dataset3$totGen
@@ -82,11 +85,13 @@ dataset10 <- subset(dataset3, dataset3$coal != 'NA' & dataset3$oil != 'NA' & dat
                     & dataset3$bio != 'NA' & dataset3$wind != 'NA' & dataset3$solar != 'NA' & dataset3$geo != 'NA' & dataset3$other != 'NA')
 
 
+# useful for the first map
 ilData <- subset(dataset18, dataset18$abb == 'IL')
 colorPalette <- colorFactor(palette = c('#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00', '#CC79A7',
                                         '#999999', '#990000', '#000000'), domain = dataset18$primary)
 
 
+# setting up the content for the dropdown menus when the user picks a year and state
 years <- c(2000, 2010, 2018)
 years2 <- c(2000, 2010, 2018)
 states <- setNames(state.abb, state.name)[state.name]
@@ -96,7 +101,7 @@ states2 <- append(states, c("Washington DC" = "DC"))
 sources <- c("coal", "oil", "gas", "nuclear", "hydro", "bio", "wind", "solar", "geo", "other", "Renewable", "Non-Renewable")
 
 
-# Define UI for application that draws a histogram
+# shiny application 
 ui <- dashboardPage(
     skin = "red",
     dashboardHeader(title = "Raw Power"),
@@ -117,7 +122,7 @@ ui <- dashboardPage(
     ),
     dashboardBody(
         tabItems(
-            # Illinois leaflet map for 2018
+            # Illinois leaflet map for 2018 and checkbox
             tabItem(tabName = "ill",
                     fluidRow(
                         column(3,
@@ -134,7 +139,7 @@ ui <- dashboardPage(
                         )
                     )
             ),
-            # different state comparisons
+            # different state comparisons and different checkboxes
             tabItem(tabName = "states",
                     fluidRow(
                         column(1,
@@ -161,15 +166,13 @@ ui <- dashboardPage(
                                    leafletOutput("map3")
                                )
                         ),
-                        column(1,
-                               checkboxGroupInput("checkGroupBoth",
-                                                  h4("Select which energy source to filter"),
-                                                  choices = c("All", sources),
-                                                  selected = "All")
-                    )
+                        checkboxGroupInput("checkGroupBoth",
+                                    h4("Select which energy source to filter for both maps"),
+                                    choices = c("All", sources),
+                                    selected = "All", inline = TRUE)
                     )
             ),
-            # US Map
+            # US Map, slider, and checkbox
             tabItem(tabName = "usa",
                     column(1,
                            checkboxGroupInput("checkGroup4",
@@ -182,26 +185,31 @@ ui <- dashboardPage(
                                leafletOutput("map4")
                            )
                     ),
-                    column(10, 
-                            sliderInput("slider1", '', min = 0, max = 35000000, value = c(0, 35000000), width = 100 
+                    column(12, 
+                            sliderInput("slider1", 'Pick a range: ', min = 0, max = 35000000, value = c(0, 35000000), width = 100 
                             ),
-                            h2("Use the first year and state options to control the map")
+                            h2("Use the first year option to control which year is shown.")
                     )
             ),
             #about
             tabItem(tabName = "credits",
                     h1("About"),
                     h2("Created by: Matthew Ghuneim"),
-                    h3("This was the second project for CS 424 Spring 2021. Given 3 data files, I did preprocessing and cleaning in both Python and R. The original data file is located here: https://www.epa.gov/egrid/download-data")
+                    h3("This was the second project for CS 424 Spring 2021. 
+                       Given 3 data files, I did preprocessing and cleaning for the data in both Python and R/Shiny. 
+                       The original data files are located here: https://www.epa.gov/egrid/download-data.
+                       The code available to run this is located here: https://github.com/mghuneim/424project2")
             )
         )
     )
 )
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
+# server functions
+server <- function(input, output, session) {
 
     # check box reactive functions
+    
+    # checkbox function for the first map
     checkGroup1 <- reactive({
         if ("All" %in% input$checkGroup1){
             dataset18
@@ -217,6 +225,7 @@ server <- function(input, output) {
         }
     })
     
+    # checkbox function for the first comparison map
     checkGroup2 <- reactive({
         if (input$Year == '2000'){
             newdata <- subset(dataset00, dataset00$abb == input$State)
@@ -243,6 +252,7 @@ server <- function(input, output) {
         }
     })
     
+    # checkbox function for the second comparison map
     checkGroup3 <- reactive({
         if (input$Year2 == '2000'){
             newdata2 <- subset(dataset00, dataset00$abb == input$State2)
@@ -270,16 +280,24 @@ server <- function(input, output) {
         }
     })
     
+    # checkbox to update both graphs at the same time 
+    observe({
+        bothMaps <- input$checkGroupBoth
+        updateCheckboxGroupInput(session, 'checkGroup2', selected = bothMaps)
+        updateCheckboxGroupInput(session, 'checkGroup3', selected = bothMaps)
+    })
+
+    
+    # checkbox function for the us map 
     checkGroup4 <- reactive({
-        
         if (input$Year == '2000'){
-            newdata2 <- subset(dataset00, dataset00$abb == input$State)
+            newdata2 <- dataset00
         }
         if (input$Year == '2010'){
-            newdata2 <- subset(dataset10, dataset10$abb == input$State)
+            newdata2 <- dataset10
         }
         if (input$Year == '2018'){
-            newdata2 <- subset(dataset18, dataset18$abb == input$State)
+            newdata2 <- dataset18
         }
         
         if (!is.null(newdata2)){
@@ -287,10 +305,10 @@ server <- function(input, output) {
             if ("All" %in% input$checkGroup4){
                 newdata2
             }
-            else if ("Renewable" %in% input$checkGroup3){
+            else if ("Renewable" %in% input$checkGroup4){
                 newdata2 <- subset(newdata2, newdata2$primary %in% c('hydro', 'bio', 'wind', 'solar', 'geo'))
             }
-            else if ("Non-Renewable" %in% input$checkGroup3){
+            else if ("Non-Renewable" %in% input$checkGroup4){
                 newdata2 <- subset(newdata2, newdata2$primary %in% c('coal', 'oil', 'gas', 'nuclear', 'other'))
             }
             else {
@@ -298,19 +316,22 @@ server <- function(input, output) {
             }
         }
     })
-        
     
+    # maps
+        
+    # first leaflet map for Illinois 2018
     output$map1 <- renderLeaflet({
         ilData <- checkGroup1()
         ilMap <- subset(ilData, ilData$abb == 'IL')
         leaflet(ilMap) %>%
             addProviderTiles(providers$CartoDB.Positron) %>%
-            addCircles(lng=ilMap$long, lat=ilMap$lat, color = ~colorPalette(ilMap$primary), popup=paste(ilMap$name)) %>%
+            addCircleMarkers(lng=ilMap$long, lat=ilMap$lat, color = ~colorPalette(ilMap$primary), popup=paste(ilMap$name)) %>%
             addResetMapButton() %>%
             setView(-89, 40, zoom = 6) %>%
             addLegend("bottomright", colorPalette, values = ilMap$primary, title = "Energy Sources", opacity = 1)
     })
     
+    # first comparison map
     output$map2 <- renderLeaflet({
         stateData <- checkGroup2()
         colorPalette2 <- colorFactor(palette = c('#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00', '#CC79A7',
@@ -319,13 +340,24 @@ server <- function(input, output) {
             addProviderTiles(providers$CartoDB.Positron) %>%
             addProviderTiles(providers$Stamen.Toner) %>%
             addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
-            addCircles(lng=stateData$long, lat=stateData$lat, color = ~colorPalette2(stateData$primary), popup=paste('Name:', stateData$name, "<br>", 
-                                                                                                                     'Percent Renewable:', scales::percent(stateData$pcRenew), '<br>', 
-                                                                                                                     'Percent Non-Renewable:', scales::percent(stateData$pcNonRenew), '<br>')) %>%
+            addCircleMarkers(lng=stateData$long, lat=stateData$lat, radius = stateData$totGen/1000000, color = ~colorPalette2(stateData$primary), popup=paste('Name:', stateData$name, "<br>", 
+                                                                                                                             'Coal Capacity: ', stateData$coal, '<br>',
+                                                                                                                             'Oil Capacity: ', stateData$oil, '<br>',
+                                                                                                                             'Gas Capacity: ', stateData$gas, '<br>',
+                                                                                                                             'Nuclear Capacity: ', stateData$nuclear, '<br>',
+                                                                                                                             'Hydro Capacity: ', stateData$hydro, '<br>',
+                                                                                                                             'Bio Capacity: ', stateData$bio, '<br>',
+                                                                                                                             'Wind Capacity: ', stateData$wind, '<br>',
+                                                                                                                             'Solar Capacity: ', stateData$solar, '<br>',
+                                                                                                                             'Geo Capacity: ', stateData$geo, '<br>',
+                                                                                                                             'Other Capacity: ', stateData$other, '<br>',
+                                                                                                                             'Percent Renewable:', scales::percent(stateData$pcRenew), '<br>', 
+                                                                                                                             'Percent Non-Renewable:', scales::percent(stateData$pcNonRenew), '<br>')) %>%
             addResetMapButton() %>%
             addLegend("bottomright", colorPalette2, values = stateData$primary, title = "Energy Sources", opacity = 1)
     })
     
+    # second comparison map
     output$map3 <- renderLeaflet({
         stateData <- checkGroup3()
         colorPalette2 <- colorFactor(palette = c('#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00', '#CC79A7',
@@ -334,26 +366,45 @@ server <- function(input, output) {
             addProviderTiles(providers$CartoDB.Positron) %>%
             addProviderTiles(providers$Stamen.Toner) %>%
             addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
-            addCircles(lng=stateData$long, lat=stateData$lat, color = ~colorPalette2(stateData$primary), popup=paste('Name:', stateData$name, "<br>", 
-                                                                                                                     'Percent Renewable:', scales::percent(stateData$pcRenew), '<br>', 
-                                                                                                                     'Percent Non-Renewable:', scales::percent(stateData$pcNonRenew), '<br>')) %>%
+            addCircleMarkers(lng=stateData$long, lat=stateData$lat, radius = stateData$totGen/1000000, color = ~colorPalette2(stateData$primary), popup=paste('Name:', stateData$name, "<br>", 
+                                                                                                                               'Coal Capacity: ', stateData$coal, '<br>',
+                                                                                                                               'Oil Capacity: ', stateData$oil, '<br>',
+                                                                                                                               'Gas Capacity: ', stateData$gas, '<br>',
+                                                                                                                               'Nuclear Capacity: ', stateData$nuclear, '<br>',
+                                                                                                                               'Hydro Capacity: ', stateData$hydro, '<br>',
+                                                                                                                               'Bio Capacity: ', stateData$bio, '<br>',
+                                                                                                                               'Wind Capacity: ', stateData$wind, '<br>',
+                                                                                                                               'Solar Capacity: ', stateData$solar, '<br>',
+                                                                                                                               'Geo Capacity: ', stateData$geo, '<br>',
+                                                                                                                               'Other Capacity: ', stateData$other, '<br>',
+                                                                                                                               'Percent Renewable:', scales::percent(stateData$pcRenew), '<br>', 
+                                                                                                                               'Percent Non-Renewable:', scales::percent(stateData$pcNonRenew), '<br>')) %>%
             addResetMapButton() %>%
             addLegend("bottomright", colorPalette2, values = stateData$primary, title = "Energy Sources", opacity = 1)
     })
     
+    # us map
     output$map4 <- renderLeaflet({
         stateData <- checkGroup4()
         colorPalette2 <- colorFactor(palette = c('#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00', '#CC79A7',
                                                  '#999999', '#990000', '#000000'), domain = stateData$primary)
         leaflet(stateData) %>%
             addProviderTiles(providers$CartoDB.Positron) %>%
-            addProviderTiles(providers$Stamen.Toner) %>%
-            addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
-            addCircles(lng=stateData$long, lat=stateData$lat, color = ~colorPalette2(stateData$primary), popup=paste('Name:', stateData$name, "<br>", 
-                                                                                                                     'Percent Renewable:', scales::percent(stateData$pcRenew), '<br>', 
-                                                                                                                     'Percent Non-Renewable:', scales::percent(stateData$pcNonRenew), '<br>')) %>%
+            addCircleMarkers(lng=stateData$long, lat=stateData$lat, radius = stateData$totGen/1000000, color = ~colorPalette2(stateData$primary), popup=paste('Name:', stateData$name, "<br>", 
+                                                                                                                               'Coal Capacity: ', stateData$coal, '<br>',
+                                                                                                                               'Oil Capacity: ', stateData$oil, '<br>',
+                                                                                                                               'Gas Capacity: ', stateData$gas, '<br>',
+                                                                                                                               'Nuclear Capacity: ', stateData$nuclear, '<br>',
+                                                                                                                               'Hydro Capacity: ', stateData$hydro, '<br>',
+                                                                                                                               'Bio Capacity: ', stateData$bio, '<br>',
+                                                                                                                               'Wind Capacity: ', stateData$wind, '<br>',
+                                                                                                                               'Solar Capacity: ', stateData$solar, '<br>',
+                                                                                                                               'Geo Capacity: ', stateData$geo, '<br>',
+                                                                                                                               'Other Capacity: ', stateData$other, '<br>',
+                                                                                                                               'Percent Renewable:', scales::percent(stateData$pcRenew), '<br>', 
+                                                                                                                               'Percent Non-Renewable:', scales::percent(stateData$pcNonRenew), '<br>')) %>%
             addResetMapButton() %>%
-            setView(-95.665, 37.6, zoom = 4) %>%
+            setView(-95.665, 37.09024, zoom = 4) %>%
             addLegend("bottomright", colorPalette2, values = stateData$primary, title = "Energy Sources", opacity = 1)
     })
     
