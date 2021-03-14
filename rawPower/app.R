@@ -125,17 +125,17 @@ ui <- dashboardPage(
             # Illinois leaflet map for 2018 and checkbox
             tabItem(tabName = "ill",
                     fluidRow(
-                        column(3,
-                               checkboxGroupInput("checkGroup1",
-                                                  h4("Select which energy source to filter"),
-                                                  choices = c("All", sources),
-                                                  selected = "All")  
-                        ),
-                        column(8,
+                        column(10,
                                box(title = "Leaflet Map of Illinois Power Plants in 2018", solidHeader = TRUE,
                                    status = "primary", width = 12,
                                    leafletOutput("map1")
                                )
+                        ),
+                        column(1,
+                               checkboxGroupInput("checkGroup1",
+                                                  h4("Select which energy source to filter"),
+                                                  choices = c("All", sources),
+                                                  selected = "All")  
                         )
                     )
             ),
@@ -174,19 +174,19 @@ ui <- dashboardPage(
             ),
             # US Map, slider, and checkbox
             tabItem(tabName = "usa",
-                    column(1,
-                           checkboxGroupInput("checkGroup4",
-                                              h4("Select which energy source to filter"),
-                                              choices = c("All", sources))  
-                    ),
-                    column(8,
+                    column(10,
                            box(title = "US Map", solidHeader = TRUE,
                                status = "primary", width = 12,
                                leafletOutput("map4")
                            )
                     ),
+                    column(1,
+                           checkboxGroupInput("checkGroup4",
+                                              h4("Select which energy source to filter"),
+                                              choices = c("All", sources))  
+                    ),
                     column(12, 
-                            sliderInput("slider1", 'Pick a range: ', min = 0, max = 35000000, value = c(0, 35000000), width = 100 
+                            sliderInput("slider1", 'Pick a range: ', min = 0, max = 35000000, value = c(0, 35000000), width = 1000 
                             ),
                             h2("Use the first year option to control which year is shown.")
                     )
